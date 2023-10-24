@@ -54,3 +54,12 @@ ggplot(students_exam, aes(x = Exam)) +
   ylab("Total of students")
 ```
 
+## Question 5
+
+```{r}
+group_grades <- grades |> 
+  group_by(Group)
+group_count <- count(group_grades)
+kable(group_count)
+```
+

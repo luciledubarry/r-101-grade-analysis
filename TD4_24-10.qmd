@@ -70,3 +70,13 @@ ggplot(grades, aes(x=Group)) +
   geom_bar()
 ```
 
+## Question 7
+
+```{r}
+step1 <- group_grades |> filter(!is.na(Exam))
+ggplot(step1, aes(x = Exam, fill = Group)) +
+  geom_bar() +
+  xlab("Grades depending to groups") +
+  ylab("Total of groups")
+```
+

@@ -36,3 +36,14 @@ variable_exam <- grades |>
             maximum = max(Exam, na.rm=TRUE))
 kable(variable_exam)
 ```
+
+## Question 3
+
+```{r}
+NA_count <- grades |> filter(is.na(Exam))
+```
+`r count(NA_count)|>pull(n)` students were missing at the final exam. 
+
+## Question 4
+
+

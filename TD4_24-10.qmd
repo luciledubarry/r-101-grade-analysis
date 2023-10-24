@@ -1,0 +1,19 @@
+---
+title: "TD4_24-10"
+author: "Lucile Dubarry"
+format: 
+  html:
+    echo: false
+    execute:  
+      keep-md: true
+---
+
+```{r configuration}
+#| message: false
+here::i_am("r-101-grade-analysis.Rproj")
+library(here)
+library(tidyr)
+library(dplyr)
+```
+
+

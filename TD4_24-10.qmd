@@ -63,3 +63,10 @@ group_count <- count(group_grades)
 kable(group_count)
 ```
 
+## Question 6
+
+```{r}
+ggplot(grades, aes(x=Group)) +
+  geom_bar()
+```
+

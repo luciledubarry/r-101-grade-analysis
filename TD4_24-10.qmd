@@ -31,7 +31,7 @@ grades <- vroom(here("grades.csv"))
 ```{r}
 variable_exam <- grades |>
   summarise(median = median(Exam, na.rm=TRUE), 
-            mean = mean(Exam, na.rm=TRUE), 
+            mean = sprintf("%.2f",mean(Exam, na.rm=TRUE)), 
             minimum = min(Exam, na.rm=TRUE), 
             maximum = max(Exam, na.rm=TRUE))
 kable(variable_exam)
@@ -50,8 +50,9 @@ NA_count <- grades |> filter(is.na(Exam))
 students_exam <- grades |> filter(!is.na(Exam))
 ggplot(students_exam, aes(x = Exam)) +
   geom_bar() +
-  xlab("Grades at the exam") +
-  ylab("Total of students")
+  labs(x = "Grades at the exam",
+       y = "Total of students", 
+       title = "Distribution of grades at the Exam")
 ```
 
 ## Question 5
@@ -59,24 +60,162 @@ ggplot(students_exam, aes(x = Exam)) +
 ```{r}
 group_grades <- grades |> 
   group_by(Group)
-group_count <- count(group_grades)
-kable(group_count)
+kable(count(group_grades))
 ```
 
 ## Question 6
 
 ```{r}
 ggplot(grades, aes(x=Group)) +
-  geom_bar()
+  geom_bar() +
+    labs(title = "Number of Students in each Group",
+       x = "Groups", 
+       y = "Students")
 ```
 
-## Question 7
+## Question 7 
+### 1st part (wrong solution)
 
 ```{r}
-step1 <- group_grades |> filter(!is.na(Exam))
-ggplot(step1, aes(x = Exam, fill = Group)) +
+sol1 <- group_grades |> filter(!is.na(Exam))
+ggplot(sol1, aes(x = Exam, fill = Group)) +
   geom_bar() +
-  xlab("Grades depending to groups") +
+  xlab("Exam Grade") +
   ylab("Total of groups")
+```
+This solution enables us to know the number of groups that received a specific grade for each grade. However, it doesn't allow us to observe the distribution of the exam grade for each group. 
+
+### 2nd part (boxplot)
+
+```{r}
+ggplot(sol1, aes(x = Group, y = Exam)) +
+  geom_boxplot() +
+  ylab("Exam grade") +
+  xlab("Group")
+```
+This solution shows the distribution of the exam grade for each group. It  allows to easily compare the grade and its variance each group received at the exam. 
+
+### 3rd solution (density plot)
+
+```{r}
+ggplot(sol1, aes(x = Exam, fill = Group)) +
+  geom_density(alpha = 0.5) +
+  xlab("Exam Grade") +
+  ylab("Density")
+```
+This graph shows the density of the exam grade for each group.
+
+This solution clearly produces a colorful result, but it doesn't make it easy to differentiate between each group.
+
+## Question 8
+
+```{r}
+NA_group <- group_grades |>
+  summarise(missed_exam = sum(is.na(Exam)))
+kable(NA_group)
+```
+
+## Question 9
+
+```{r}
+ggplot(NA_group, aes(x = Group, y = missed_exam)) +
+  geom_col() +
+  labs(title = "Number of students missing the exam by Group",
+       x = "Group",
+       y = "Number of students")
+```
+
+## Question 10
+
+```{r}
+long_grades <- grades |>
+  select(Id, Group, contains("MCQ"), Exam) |>
+  pivot_longer(cols = c(Exam, contains("MCQ")), names_to = "name", values_to = "value")
+```
+
+## Question 11
+
+```{r}
+long_NA_count <- long_grades |>
+  group_by(Id) |>
+  summarise(missing_grades = sum(is.na(value)))
+kable(long_NA_count)
+```
+
+## Question 12
+
+```{r}
+ggplot(long_NA_count, aes(x = Id, y = missing_grades)) +
+  geom_col() +
+  labs(title = "Missing grades per student",
+       x = "Students", 
+       y = "Number of missing grades")
+```
+
+## Question 13
+
+```{r}
+long_NA_group <- long_grades |>
+  group_by(Group) |>
+  filter(name=="Exam") |>
+  summarise(missed_exam = sum(is.na(value)))
+kable(long_NA_group)
+```
+
+## Question 14
+
+```{r}
+library(stringr)
+```
+
+```{r}
+long_missing_online_test <- long_grades |>
+  filter(str_starts(name, "Online")) |>  
+  group_by(Id) |>
+  summarise(missing_online_test = sum(is.na(value)))
+kable(long_missing_online_test)
+```
+
+## Question 15
+
+```{r}
+missing_online_test <- grades |> 
+  select(Id, Exam, starts_with("Online")) |>
+  rowwise() |>
+  mutate(missed_online_test = sum(across(starts_with("Online"), is.na))) |>
+  ungroup()
+```
+
+```{r}
+missing_online_test |> 
+  filter(!is.na(Exam)) |>
+  ggplot(aes(x = Exam, y = missed_online_test)) +
+  geom_bar(stat = "identity")
+```
+
+## Question 16
+
+```{r}
+missed_MCQ <- grades |>
+  select(Id, starts_with("MCQ")) |>
+  group_by(Id) |>
+  summarise(missed = anyNA(across(starts_with("MCQ"))))
+```
+
+## Question 17
+
+```{r}
+P_group <- inner_join(missed_MCQ, grades, by=join_by(Id)) |>
+  group_by(Group) |>
+  summarise(P_missed = sum(missed=="TRUE")/n())
+```
+
+## Question 18
+```{r}
+P_exam <- inner_join(P_group, grades, by=join_by(Group)) |> 
+  group_by(Group) |>
+  mutate(mean_exam = mean(Exam, na.rm=TRUE))
+ggplot(P_exam, aes(x = P_missed, y = mean_exam)) +
+  geom_line()
 ```
 

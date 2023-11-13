@@ -60,13 +60,14 @@ ggplot(students_exam, aes(x = Exam)) +
 ```{r}
 group_grades <- grades |> 
   group_by(Group)
-kable(count(group_grades))
+kable(head(count(group_grades), n =10))
 ```
 
 ## Question 6
 
 ```{r}
-ggplot(grades, aes(x=Group)) +
+grades |> mutate('Group'= gsub("grp_","",grades$Group)) |>
+ggplot(aes(x=Group)) +
   geom_bar() +
     labs(title = "Number of Students in each Group",
        x = "Groups", 
@@ -74,51 +75,58 @@ ggplot(grades, aes(x=Group)) +
 ```
 
 ## Question 7 
-### 1st part (wrong solution)
+### 1st part (bar graph with facet)
 
 ```{r}
-sol1 <- group_grades |> filter(!is.na(Exam))
-ggplot(sol1, aes(x = Exam, fill = Group)) +
+grades |> 
+  filter(!is.na(Exam)) |>
+ggplot(aes(x = Exam)) +
   geom_bar() +
-  xlab("Exam Grade") +
-  ylab("Total of groups")
+  facet_wrap(~Group)
 ```
-This solution enables us to know the number of groups that received a specific grade for each grade. However, it doesn't allow us to observe the distribution of the exam grade for each group. 
+In this case, we consider the 'Exam' variable to be discrete. 
+
+This solution enables us to know the distribution of the exam grade among each group. The facet_wrap allows to compare each group, but the graph is difficult to read. 
 
 ### 2nd part (boxplot)
 
 ```{r}
-ggplot(sol1, aes(x = Group, y = Exam)) +
+grades |> 
+  mutate('Group'= gsub("grp_","",grades$Group)) |>
+  filter(!is.na(Exam)) |> 
+ggplot(aes(x = `Group`, y = `Exam`)) +
   geom_boxplot() +
   ylab("Exam grade") +
   xlab("Group")
 ```
-This solution shows the distribution of the exam grade for each group. It  allows to easily compare the grade and its variance each group received at the exam. 
+This solution shows the distribution of the exam grade for each group. It may be the best representation, as it allows to easily compare the exam grade distribution for each group. 
 
-### 3rd solution (density plot)
+### 3rd solution (density plot with facet)
 
 ```{r}
-ggplot(sol1, aes(x = Exam, fill = Group)) +
+ggplot(sol1, aes(x = Exam)) +
   geom_density(alpha = 0.5) +
   xlab("Exam Grade") +
-  ylab("Density")
+  ylab("Density") +
+  facet_wrap(~Group)
 ```
-This graph shows the density of the exam grade for each group.
-
-This solution clearly produces a colorful result, but it doesn't make it easy to differentiate between each group.
+This graph shows the density of the exam grade for each group. In this case, the variable 'Exam' is considered as a continuous one. It displays a graph easier to read. 
 
 ## Question 8
 
 ```{r}
 NA_group <- group_grades |>
   summarise(missed_exam = sum(is.na(Exam)))
-kable(NA_group)
+kable(head(NA_group, n = 10))
 ```
+
 
 ## Question 9
 
 ```{r}
-ggplot(NA_group, aes(x = Group, y = missed_exam)) +
+NA_group |> 
+  mutate('Group'= gsub("grp_","",NA_group$Group)) |> 
+ggplot(aes(x = Group, y = missed_exam)) +
   geom_col() +
   labs(title = "Number of students missing the exam by Group",
        x = "Group",
@@ -139,7 +147,7 @@ long_grades <- grades |>
 long_NA_count <- long_grades |>
   group_by(Id) |>
   summarise(missing_grades = sum(is.na(value)))
-kable(long_NA_count)
+kable(head(long_NA_count, n = 10))
 ```
 
 ## Question 12
@@ -152,6 +160,17 @@ ggplot(long_NA_count, aes(x = Id, y = missing_grades)) +
        y = "Number of missing grades")
 ```
 
+The graph displays the number of missing grades for each student. However, it doesn't represent the distribution of missing grades among students. The following graph is a representation of this distribution : 
+
+```{r}
+ggplot(long_NA_count, aes(x= missing_grades)) + 
+  geom_bar() + 
+  xlab("Missing grades") + 
+  ylab("Students") + 
+  ggtitle("Distribution of missing grades per student")
+```
+
+
 ## Question 13
 
 ```{r}
@@ -159,7 +178,7 @@ long_NA_group <- long_grades |>
   group_by(Group) |>
   filter(name=="Exam") |>
   summarise(missed_exam = sum(is.na(value)))
-kable(long_NA_group)
+kable(head(long_NA_group, n = 10))
 ```
 
 ## Question 14
@@ -173,7 +192,7 @@ long_missing_online_test <- long_grades |>
   filter(str_starts(name, "Online")) |>  
   group_by(Id) |>
   summarise(missing_online_test = sum(is.na(value)))
-kable(long_missing_online_test)
+kable(head(long_missing_online_test, n = 10))
 ```
 
 ## Question 15
@@ -190,7 +209,8 @@ missing_online_test <- grades |>
 missing_online_test |> 
   filter(!is.na(Exam)) |>
   ggplot(aes(x = Exam, y = missed_online_test)) +
-  geom_bar(stat = "identity")
+  geom_bar(stat = "identity")+ 
+  ggtitle("Distribution of the exam grade conditionned by the number of missing grades")
 ```
 
 ## Question 16
@@ -211,11 +231,16 @@ P_group <- inner_join(missed_MCQ, grades, by=join_by(Id)) |>
 ```
 
 ## Question 18
+
 ```{r}
 P_exam <- inner_join(P_group, grades, by=join_by(Group)) |> 
   group_by(Group) |>
   mutate(mean_exam = mean(Exam, na.rm=TRUE))
 ggplot(P_exam, aes(x = P_missed, y = mean_exam)) +
-  geom_line()
+  geom_line() +
+  geom_point() +
+    labs(title = "Distribution of the average grade per group as a function of missed online test",
+       x = "Pourcentage of missed online test", 
+       y = "Average at the exam grade")
 ```
 
